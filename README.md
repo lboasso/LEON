@@ -101,7 +101,7 @@ double = 01000100 "64 bits little endian IEEE 754 double precision floating poin
 
 ### List
 
-A list of maximum 16 elements can be encoded with one byte type tag `0101XXXX`
+A list of maximum 15 elements can be encoded with one byte type tag `0101XXXX`
 where the least significant 4 bits store the length of the list as unsigned
 integer, followed by LEON objects as its elements.
 A list of an arbitrary number of elements is serialized with one byte type tag
@@ -121,7 +121,7 @@ bigList = 01000101 length {object} .
 
 A string is serialized as encoded [UTF-8](https://en.wikipedia.org/wiki/UTF-8)
 raw bytes.
-If the size of the string is at most 32 bytes, the string can be encoded with
+If the size of the string is at most 31 bytes, the string can be encoded with
 one byte type tag `011XXXXX`, where the least significant 5 bits store the size
 as unsigned integer, followed by its raw bytes.
 A string of an arbitrary size is serialized with one byte type tag `01000110`, a
@@ -131,7 +131,7 @@ The size of a string must match the number of its raw bytes.
 
 ```
 string = smallString | bigString .
-smallString = 011XXXXX "UTF8 string of at most 32 bytes in size" .
+smallString = 011XXXXX "UTF8 string of at most 31 bytes in size" .
 bigString = 01000110 size "UTF8 string of at most 'size' bytes" .
 ```
 
@@ -184,5 +184,5 @@ value = object .
 | `01` `001101` | Reserved for future extensions                                                       |
 | `01` `001110` | Reserved for future extensions                                                       |
 | `01` `001111` | Reserved for future extensions                                                       |
-| `01` `01XXXX` | list of at most 16 elements - elements                                               |
-| `01` `1XXXXX` | UTF8 string of at most 32 bytes in size - raw bytes                                  |
+| `01` `01XXXX` | list of at most 15 elements - elements                                               |
+| `01` `1XXXXX` | UTF8 string of at most 31 bytes in size - raw bytes                                  |

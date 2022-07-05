@@ -23,12 +23,12 @@ public class Tags {
   public static final int BYTES_TAG = 0x47;
   public static final int MAP_TAG = 0x48;
 
-  public static final int MAX_LENGTH_SMALL_LIST = 16;
+  public static final int MAX_LENGTH_SMALL_LIST = 15;
   private static final int MASK_SMALL_LIST_TAG = 0xF0;
   public static final int SMALL_LIST_TAG = 0x50;
   public static final int MASK_LENGTH_SMALL_LIST = 0xF;
 
-  public static final int MAX_BYTES_SMALL_STR = 32;
+  public static final int MAX_BYTES_SMALL_STR = 31;
   private static final int MASK_SMALL_STR_TAG = 0xE0;
   public static final int SMALL_STR_TAG = 0x60;
   public static final int MASK_SIZE_SMALL_STR = 0x1F;

@@ -53,7 +53,7 @@ import static leon.core.Tags.TRUE;
   smallList = 0101XXXX {object} .
   bigList = 01000101 length {object} .
   string = smallString | bigString .
-  smallString = 011XXXXX "UTF8 string of at most 32 bytes in size" .
+  smallString = 011XXXXX "UTF8 string of at most 31 bytes in size" .
   bigString = 01000110 size "UTF8 string of at most size bytes" .
   bytes = 01000111 size {XXXXXXXX} .
   map = 01001000 length {key value} .
@@ -79,8 +79,8 @@ import static leon.core.Tags.TRUE;
   01 001101  Reserved for future extensions
   01 001110  Reserved for future extensions
   01 001111  Reserved for future extensions
-  01 01XXXX  list of at most 16 elements - elements
-  01 1XXXXX  UTF8 string of at most 32 bytes in size - raw bytes
+  01 01XXXX  list of at most 15 elements - elements
+  01 1XXXXX  UTF8 string of at most 31 bytes in size - raw bytes
 
 */
 

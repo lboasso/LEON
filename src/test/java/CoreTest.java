@@ -37,6 +37,39 @@ public class CoreTest extends TestCase {
     deleteFile(out_bin);
   }
 
+  public void testSmallList() throws IOException {
+    String out_bin = "out/testSmallList.out";
+    LeonPacker pkr = new LeonPacker(out_bin);
+    List<Object> l = new ArrayList<>();
+    for(long i = 0; i < Tags.MAX_LENGTH_SMALL_LIST; i++) {
+      l.add(i);
+    }
+    pkr.packList(l);
+    pkr.close();
+
+    LeonUnpacker unpkr = new LeonUnpacker(out_bin);
+    assertEquals(l, unpkr.unpackList());
+    unpkr.close();
+    deleteFile(out_bin);
+  }
+
+  public void testSmallString() throws IOException {
+    String out_bin = "out/testSmallString.out";
+    LeonPacker pkr = new LeonPacker(out_bin);
+    StringBuilder sb = new StringBuilder();
+    for(long i = 0; i < Tags.MAX_BYTES_SMALL_STR; i++) {
+      sb.append("A");
+    }
+    String s = sb.toString();
+    pkr.packString(s);
+    pkr.close();
+
+    LeonUnpacker unpkr = new LeonUnpacker(out_bin);
+    assertEquals(s, unpkr.unpackString());
+    unpkr.close();
+    deleteFile(out_bin);
+  }
+
   public void testPackingUnpacking() throws IOException {
     int MIN = -70;
     int MAX = 70;
