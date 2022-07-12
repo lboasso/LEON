@@ -26,9 +26,8 @@ import static leon.core.Tags.LIST_TAG;
 import static leon.core.Tags.MAP_TAG;
 import static leon.core.Tags.MAX_BYTES_SMALL_STR;
 import static leon.core.Tags.MAX_LENGTH_SMALL_LIST;
+import static leon.core.Tags.MAX_SIZE_SMALL_MAP;
 import static leon.core.Tags.NULL;
-import static leon.core.Tags.SMALL_LIST_TAG;
-import static leon.core.Tags.SMALL_STR_TAG;
 import static leon.core.Tags.STR_TAG;
 import static leon.core.Tags.TRUE;
 
@@ -51,15 +50,16 @@ import static leon.core.Tags.TRUE;
   double = 01000100 "64 bits little endian IEEE 754 double precision floating point number" .
   list = smallList | bigList .
   smallList = 0101XXXX {object} .
-  bigList = 01000101 length {object} .
+  bigList = 01010000 length {object} .
   string = smallString | bigString .
   smallString = 011XXXXX "UTF8 string of at most 31 bytes in size" .
-  bigString = 01000110 size "UTF8 string of at most size bytes" .
-  bytes = 01000111 size {XXXXXXXX} .
-  map = 01001000 length {key value} .
+  bigString = 01100000 size "UTF8 string of at most 'size' bytes" .
+  bytes = 01000101 size {XXXXXXXX} .
+  map = smallMap | bigMap .
+  smallMap = 01001XXX {key value} .
+  bigMap = 01001000 length {key value} .
   key = object .
   value = object .
-
 
   00 XXXXXX  integer -32 <= x < 32
   1X XXXXXX  variable integer payload
@@ -68,24 +68,20 @@ import static leon.core.Tags.TRUE;
   01 000010  false
   01 000011  float - 32 bits little endian IEEE 754 single precision floating point number
   01 000100  double - 64 bits little endian IEEE 754 double precision floating point number
-  01 000101  list - length - elements
-  01 000110  string - size - UTF8 string bytes
-  01 000111  bytes - size - bytes
+  01 000101  bytes - size - bytes
+  01 000110  reserved for future extensions
+  01 000111  reserved for future extensions
   01 001000  map - num pairs - list of key value pairs
-  01 001001  Reserved for future extensions
-  01 001010  Reserved for future extensions
-  01 001011  Reserved for future extensions
-  01 001100  Reserved for future extensions
-  01 001101  Reserved for future extensions
-  01 001110  Reserved for future extensions
-  01 001111  Reserved for future extensions
-  01 01XXXX  list of at most 15 elements - elements
-  01 1XXXXX  UTF8 string of at most 31 bytes in size - raw bytes
+  01 001XXX  non-empty map of at most 7 key-value pairs - pairs
+  01 010000  list - length - elements
+  01 01XXXX  non-empty list of at most 15 elements - elements
+  01 100000  string - size - UTF8 string bytes
+  01 1XXXXX  non-empty UTF8 string of at most 31 bytes in size - raw bytes
 
 */
 
 
-public class LeonPacker implements Closeable, Flushable {
+public final class LeonPacker implements Closeable, Flushable {
   private OutputStream out;
 
   public LeonPacker(OutputStream out) {
@@ -154,15 +150,15 @@ public class LeonPacker implements Closeable, Flushable {
 
   public LeonPacker packString(String str) throws IOException {
     byte[] str_utf8 = str.getBytes(StandardCharsets.UTF_8);
-    int length = str_utf8.length;
-    if(length <= MAX_BYTES_SMALL_STR) {
-      int header = SMALL_STR_TAG | length;
+    int size = str_utf8.length;
+    if(size > 0 && size <= MAX_BYTES_SMALL_STR) {
+      int header = STR_TAG | size;
       out.write((byte) header);
     } else {
       out.write((byte) STR_TAG);
-      packInt(length);
+      packInt(size);
     }
-    for(int i = 0; i < length; i++) {
+    for(int i = 0; i < size; i++) {
       out.write(str_utf8[i]);
     }
     return this;
@@ -179,8 +175,8 @@ public class LeonPacker implements Closeable, Flushable {
   }
 
   public LeonPacker packListTag(long length) throws IOException {
-    if(length <= MAX_LENGTH_SMALL_LIST) {
-      int header = SMALL_LIST_TAG | (int) length;
+    if(length > 0 && length <= MAX_LENGTH_SMALL_LIST) {
+      int header = LIST_TAG | (int) length;
       out.write((byte) header);
     } else {
       out.write((byte) LIST_TAG);
@@ -190,8 +186,8 @@ public class LeonPacker implements Closeable, Flushable {
   }
 
   public LeonPacker packBytes(byte[] bytes) throws IOException {
-    int length = bytes.length;
-    packBytesTag(length);
+    int size = bytes.length;
+    packBytesTag(size);
     out.write(bytes);
     return this;
   }
@@ -218,8 +214,13 @@ public class LeonPacker implements Closeable, Flushable {
   }
 
   public LeonPacker packMapTag(long size) throws IOException {
-    out.write((byte) MAP_TAG);
-    packInt(size);
+    if(size > 0 && size <= MAX_SIZE_SMALL_MAP) {
+      int header = MAP_TAG | (int) size;
+      out.write((byte) header);
+    } else {
+      out.write((byte) MAP_TAG);
+      packInt(size);
+    }
     return this;
   }
 

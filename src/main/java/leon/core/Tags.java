@@ -6,7 +6,10 @@
 
 package leon.core;
 
-public class Tags {
+public final class Tags {
+  private Tags() {
+  }
+
   private static final int MASK_SMALL_INT = 0xC0;
   private static final int SMALL_INT_TAG = 0x00;
   private static final int MASK_INT = 0x80;
@@ -18,19 +21,21 @@ public class Tags {
   public static final int FALSE = 0x42;
   public static final int FLOAT_TAG = 0x43;
   public static final int DOUBLE_TAG = 0x44;
-  public static final int LIST_TAG = 0x45;
-  public static final int STR_TAG = 0x46;
-  public static final int BYTES_TAG = 0x47;
-  public static final int MAP_TAG = 0x48;
+  public static final int BYTES_TAG = 0x45;
 
+  public static final int MAP_TAG = 0x48;
+  public static final int MAX_SIZE_SMALL_MAP = 7;
+  private static final int MASK_MAP_TAG = 0xF8;
+  public static final int MASK_SIZE_SMALL_MAP = 0x7;
+
+  public static final int LIST_TAG = 0x50;
   public static final int MAX_LENGTH_SMALL_LIST = 15;
-  private static final int MASK_SMALL_LIST_TAG = 0xF0;
-  public static final int SMALL_LIST_TAG = 0x50;
+  private static final int MASK_LIST_TAG = 0xF0;
   public static final int MASK_LENGTH_SMALL_LIST = 0xF;
 
+  public static final int STR_TAG = 0x60;
   public static final int MAX_BYTES_SMALL_STR = 31;
-  private static final int MASK_SMALL_STR_TAG = 0xE0;
-  public static final int SMALL_STR_TAG = 0x60;
+  private static final int MASK_STR_TAG = 0xE0;
   public static final int MASK_SIZE_SMALL_STR = 0x1F;
 
   public static boolean isInt(int tag) {
@@ -53,38 +58,20 @@ public class Tags {
     return tag == DOUBLE_TAG;
   }
 
-
-  public static boolean isSmallList(int tag) {
-    return (tag & MASK_SMALL_LIST_TAG) == SMALL_LIST_TAG;
-  }
-
-  public static boolean isBigList(int tag) {
-    return tag == LIST_TAG;
-  }
-
   public static boolean isList(int tag) {
-    return isSmallList(tag) || isBigList(tag);
-  }
-
-  public static boolean isSmallString(int tag) {
-    return (tag & MASK_SMALL_STR_TAG) == SMALL_STR_TAG;
-  }
-
-  public static boolean isBigString(int tag) {
-    return tag == STR_TAG;
+    return (tag & MASK_LIST_TAG) == LIST_TAG;
   }
 
   public static boolean isString(int tag) {
-    return isSmallString(tag) || isBigString(tag);
+    return (tag & MASK_STR_TAG) == STR_TAG;
   }
-
 
   public static boolean isBytes(int tag) {
     return tag == BYTES_TAG;
   }
 
   public static boolean isMap(int tag) {
-    return tag == MAP_TAG;
+    return (tag & MASK_MAP_TAG) == MAP_TAG;
   }
 
   public static boolean isValidTag(int tag) {

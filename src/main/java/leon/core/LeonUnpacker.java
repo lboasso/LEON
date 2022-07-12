@@ -22,7 +22,7 @@ import static leon.core.LeonException.Reason.UnableToPackObj;
 import static leon.core.LeonException.Reason.UnableToUnpackObj;
 
 
-public class LeonUnpacker implements Closeable {
+public final class LeonUnpacker implements Closeable {
   private final InputStream in;
 
   public LeonUnpacker(InputStream in) {
@@ -136,13 +136,13 @@ public class LeonUnpacker implements Closeable {
     int size;
     byte[] str_utf8;
 
-    if(Tags.isSmallString(tag)) {
-      size = tag & Tags.MASK_SIZE_SMALL_STR;
-    } else if(Tags.isBigString(tag)) {
+    if(!Tags.isString(tag)) {
+      throw new LeonException("Expecting a string in input stream", UnableToUnpackObj);
+    }
+    size = tag & Tags.MASK_SIZE_SMALL_STR;
+    if(size == 0) { // big string
       //TODO support long, array.length is a int
       size = (int) unpackInt();
-    } else {
-      throw new LeonException("Expecting a string in input stream", UnableToUnpackObj);
     }
     str_utf8 = new byte[size];
     int num_read = in.read(str_utf8);
@@ -161,12 +161,12 @@ public class LeonUnpacker implements Closeable {
   public long unpackListLengthWithTag(int tag) throws IOException {
     long length;
 
-    if(Tags.isSmallList(tag)) {
-      length = tag & Tags.MASK_LENGTH_SMALL_LIST;
-    } else if(Tags.isBigList(tag)) {
-      length = unpackInt();
-    } else {
+    if(!Tags.isList(tag)) {
       throw new LeonException("Expecting a list in input stream", UnableToUnpackObj);
+    }
+    length = tag & Tags.MASK_LENGTH_SMALL_LIST;
+    if(length == 0) { // big list
+      length = unpackInt();
     }
     return length;
   }
@@ -175,13 +175,13 @@ public class LeonUnpacker implements Closeable {
     ArrayList<Object> list = new ArrayList<>();
     int length;
 
-    if(Tags.isSmallList(tag)) {
-      length = tag & Tags.MASK_LENGTH_SMALL_LIST;
-    } else if(Tags.isBigList(tag)) {
+    if(!Tags.isList(tag)) {
+      throw new LeonException("Expecting a list in input stream", UnableToUnpackObj);
+    }
+    length = tag & Tags.MASK_LENGTH_SMALL_LIST;
+    if(length == 0) { // big list
       //TODO support long: List.size() returns a int
       length = (int) unpackInt();
-    } else {
-      throw new LeonException("Expecting a list in input stream", UnableToUnpackObj);
     }
     for(int i = 0; i < length; i++) {
       list.add(unpackObject());
@@ -241,10 +241,12 @@ public class LeonUnpacker implements Closeable {
   public long unpackMapSizeWithTag(int tag) throws IOException {
     long size;
 
-    if(Tags.isMap(tag)) {
-      size = unpackInt();
-    } else {
+    if(!Tags.isMap(tag)) {
       throw new LeonException("Expecting a map in input stream", UnableToUnpackObj);
+    }
+    size = tag & Tags.MASK_SIZE_SMALL_MAP;
+    if(size == 0) { // big map
+      size = unpackInt();
     }
     return size;
   }
@@ -253,11 +255,13 @@ public class LeonUnpacker implements Closeable {
     HashMap<Object, Object> map = new HashMap<>();
     int size;
 
-    if(Tags.isMap(tag)) {
+    if(!Tags.isMap(tag)) {
+      throw new LeonException("Expecting a map in input stream", UnableToUnpackObj);
+    }
+    size = tag & Tags.MASK_SIZE_SMALL_MAP;
+    if(size == 0) { // big map
       //TODO support long, Map.size() returns a int
       size = (int) unpackInt();
-    } else {
-      throw new LeonException("Expecting a map in input stream", UnableToUnpackObj);
     }
     for(int i = 0; i < size; i++) {
       Object key = unpackObject();
@@ -333,11 +337,8 @@ public class LeonUnpacker implements Closeable {
     } else if(Tags.isNull(tag) || Tags.isBoolean(tag)) {
       // nothing to do
     } else if(Tags.isString(tag)) {
-      long size;
-
-      if(Tags.isSmallString(tag)) {
-        size = tag & Tags.MASK_SIZE_SMALL_STR;
-      } else {
+      long size = tag & Tags.MASK_SIZE_SMALL_STR;
+      if(size == 0) { // big string
         size = unpackInt();
       }
       while(size > 0) {
@@ -345,11 +346,8 @@ public class LeonUnpacker implements Closeable {
         size--;
       }
     } else if(Tags.isList(tag)) {
-      long length;
-
-      if(Tags.isSmallList(tag)) {
-        length = tag & Tags.MASK_LENGTH_SMALL_LIST;
-      } else {
+      long length = tag & Tags.MASK_LENGTH_SMALL_LIST;
+      if(length == 0) { // big list
         length = unpackInt();
       }
       while(length > 0) {
@@ -357,7 +355,11 @@ public class LeonUnpacker implements Closeable {
         length--;
       }
     } else if(Tags.isMap(tag)) {
-      long size = unpackInt() * 2;
+      long size = tag & Tags.MASK_SIZE_SMALL_MAP;
+      if(size == 0) { // big map
+        size = unpackInt();
+      }
+      size = size * 2;
       while(size > 0) {
         skipObject(nextTag());
         size--;

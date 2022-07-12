@@ -21,7 +21,7 @@ import java.util.Map;
 public class CoreTest extends TestCase {
 
   public void testBasic() throws IOException {
-    String out_bin = "out/testBasic.out";
+    String out_bin = "out/testBasic.leon";
     Map<Object, Object> map = new HashMap<>();
     map.put(0xCAFEBABEL, "class file magic number");
     LeonPacker pkr = new LeonPacker(out_bin);
@@ -38,7 +38,7 @@ public class CoreTest extends TestCase {
   }
 
   public void testSmallList() throws IOException {
-    String out_bin = "out/testSmallList.out";
+    String out_bin = "out/testSmallList.leon";
     LeonPacker pkr = new LeonPacker(out_bin);
     List<Object> l = new ArrayList<>();
     for(long i = 0; i < Tags.MAX_LENGTH_SMALL_LIST; i++) {
@@ -54,7 +54,7 @@ public class CoreTest extends TestCase {
   }
 
   public void testSmallString() throws IOException {
-    String out_bin = "out/testSmallString.out";
+    String out_bin = "out/testSmallString.leon";
     LeonPacker pkr = new LeonPacker(out_bin);
     StringBuilder sb = new StringBuilder();
     for(long i = 0; i < Tags.MAX_BYTES_SMALL_STR; i++) {
@@ -74,7 +74,7 @@ public class CoreTest extends TestCase {
     int MIN = -70;
     int MAX = 70;
 
-    String out_bin = "out/testPackUnpack.out";
+    String out_bin = "out/testPackUnpack.leon";
     LeonPacker pkr = new LeonPacker(out_bin);
     String long_str = "Hello loooooooooooooooooooooooong!";
     MyObj myobj = new MyObj();
@@ -139,7 +139,7 @@ public class CoreTest extends TestCase {
   }
 
   public void testRawApi() throws IOException {
-    String out_bin = "out/testRawApi.out";
+    String out_bin = "out/testRawApi.leon";
     LeonPacker pkr = new LeonPacker(out_bin);
     ArrayList<Object> list = new ArrayList<>(Arrays.asList(3L, true, null, 2.13));
     pkr = pkr.packListTag(list.size());

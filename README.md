@@ -5,7 +5,7 @@ serialization format. LEON was designed to be easy to implement, fast and
 compact on the wire.
 
 Everything is stored in little endian. The encoding aims to minimize the size
-of the most common type of values: integers, strings and lists.
+of the most common type of values: integers, small strings/lists/maps.
 The format allows for future backward compatible extensions.
 
 This repository includes a reference implementation that focuses on correctness
@@ -101,11 +101,11 @@ double = 01000100 "64 bits little endian IEEE 754 double precision floating poin
 
 ### List
 
-A list of maximum 15 elements can be encoded with one byte type tag `0101XXXX`
-where the least significant 4 bits store the length of the list as unsigned
-integer, followed by LEON objects as its elements.
+A non-empty list of maximum 15 elements can be encoded with one byte type tag
+`0101XXXX` where the least significant 4 bits store the length of the list as
+unsigned integer, followed by LEON objects as its elements.
 A list of an arbitrary number of elements is serialized with one byte type tag
-`01000101` followed by a LEON integer representing its length and LEON objects
+`01010000` followed by a LEON integer representing its length and LEON objects
 as its elements.
 
 The length of a list must match the number of encoded elements.
@@ -113,7 +113,7 @@ The length of a list must match the number of encoded elements.
 ```
 list = smallList | bigList .
 smallList = 0101XXXX {object} .
-bigList = 01000101 length {object} .
+bigList = 01010000 length {object} .
 ```
 
 
@@ -121,10 +121,10 @@ bigList = 01000101 length {object} .
 
 A string is serialized as encoded [UTF-8](https://en.wikipedia.org/wiki/UTF-8)
 raw bytes.
-If the size of the string is at most 31 bytes, the string can be encoded with
-one byte type tag `011XXXXX`, where the least significant 5 bits store the size
-as unsigned integer, followed by its raw bytes.
-A string of an arbitrary size is serialized with one byte type tag `01000110`, a
+If the string is non-empty and its size is at most 31 bytes, it can be encoded
+with one byte type tag `011XXXXX`, where the least significant 5 bits store the
+size as unsigned integer, followed by its raw bytes.
+A string of an arbitrary size is serialized with one byte type tag `01100000`, a
 LEON integer representing its size and followed by its raw bytes.
 
 The size of a string must match the number of its raw bytes.
@@ -132,31 +132,37 @@ The size of a string must match the number of its raw bytes.
 ```
 string = smallString | bigString .
 smallString = 011XXXXX "UTF8 string of at most 31 bytes in size" .
-bigString = 01000110 size "UTF8 string of at most 'size' bytes" .
+bigString = 01100000 size "UTF8 string of at most 'size' bytes" .
 ```
 
 ### Bytes
 
-A sequence of bytes of data is encoded with one byte type tag `01000111`, a LEON
+A sequence of bytes of data is encoded with one byte type tag `01000101`, a LEON
 integer representing its size and followed by its raw bytes
 
 The size of the sequence of bytes must match the number of its raw bytes.
 
 
 ```
-bytes = 01000111 size {XXXXXXXX} .
+bytes = 01000101 size {XXXXXXXX} .
 ```
 
 ### Map
 
 A map is a sequence of `size` key-value pairs.
-It is encoded with one byte type tag `01001000`, a LEON integer representing its
-size and followed by pairs of LEON objects.
+If the the map is non-empty and its size is at most 7 paris, it can be
+encoded with one byte type tag `01001XXX`, where the least significant 3 bits
+store the size as unsigned integer, followed by pairs of LEON objects.
+A map of an arbitrary number of pairs is encoded with one byte type tag
+`01001000`, a LEON integer representing its size and followed by pairs of
+LEON objects.
 
 The size of a map must match the number of its encoded pairs.
 
 ```
-map = 01001000 size {key value} .
+map = smallMap | bigMap .
+smallMap = 01001XXX {key value} .
+bigMap = 01001000 length {key value} .
 key = object .
 value = object .
 ```
@@ -173,16 +179,12 @@ value = object .
 | `01` `000010` | false                                                                                |
 | `01` `000011` | float - 32 bits little endian IEEE 754 single precision floating point number        |
 | `01` `000100` | double - 64 bits little endian IEEE 754 double precision floating point number       |
-| `01` `000101` | list - length - elements                                                             |
-| `01` `000110` | string - size - UTF8 string bytes                                                    |
-| `01` `000111` | bytes - size - bytes                                                                 |
+| `01` `000101` | bytes - size - bytes                                                                 |
+| `01` `000110` | reserved for future extensions                                                       |
+| `01` `000111` | reserved for future extensions                                                       |
 | `01` `001000` | map - num pairs - list of key value pairs                                            |
-| `01` `001001` | Reserved for future extensions                                                       |
-| `01` `001010` | Reserved for future extensions                                                       |
-| `01` `001011` | Reserved for future extensions                                                       |
-| `01` `001100` | Reserved for future extensions                                                       |
-| `01` `001101` | Reserved for future extensions                                                       |
-| `01` `001110` | Reserved for future extensions                                                       |
-| `01` `001111` | Reserved for future extensions                                                       |
-| `01` `01XXXX` | list of at most 15 elements - elements                                               |
-| `01` `1XXXXX` | UTF8 string of at most 31 bytes in size - raw bytes                                  |
+| `01` `001XXX` | non-empty map of at most 7 key-value pairs - pairs                                   |
+| `01` `010000` | list - length - elements                                                             |
+| `01` `01XXXX` | non-empty list of at most 15 elements - elements                                     |
+| `01` `100000` | string - size - UTF8 string bytes                                                    |
+| `01` `1XXXXX` | non-empty UTF8 string of at most 31 bytes in size - raw bytes                        |

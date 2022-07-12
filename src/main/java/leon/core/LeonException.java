@@ -7,7 +7,7 @@
 package leon.core;
 
 
-public class LeonException extends RuntimeException {
+public final class LeonException extends RuntimeException {
   public enum Reason {UnableToPackObj, UnableToUnpackObj, InvalidTag, InternalError}
 
   private final Reason reason;
