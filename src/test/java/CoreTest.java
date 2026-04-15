@@ -70,6 +70,36 @@ public class CoreTest extends TestCase {
     deleteFile(out_bin);
   }
 
+  public void testDouble() throws IOException {
+    String out_bin = "out/testDouble.leon";
+    LeonPacker pkr = new LeonPacker(out_bin);
+    long hex_d = 0x145778FFFF154763L;
+    double d = Double.longBitsToDouble(hex_d);
+    pkr.packDouble(d);
+    pkr.close();
+    LeonUnpacker unpkr = new LeonUnpacker(out_bin);
+    double unpked_d = unpkr.unpackDouble();
+    assertEquals(d, unpked_d);
+    assertEquals(hex_d, Double.doubleToLongBits(unpked_d));
+    unpkr.close();
+    deleteFile(out_bin);
+  }
+
+  public void testFloat() throws IOException {
+    String out_bin = "out/testFloat.leon";
+    LeonPacker pkr = new LeonPacker(out_bin);
+    int hex_f = 0x7FC00000;
+    float f = Float.intBitsToFloat(hex_f);
+    pkr.packFloat(f);
+    pkr.close();
+    LeonUnpacker unpkr = new LeonUnpacker(out_bin);
+    float unpked_f = unpkr.unpackFloat();
+    assertEquals(f, unpked_f);
+    assertEquals(hex_f, Float.floatToIntBits(unpked_f));
+    unpkr.close();
+    deleteFile(out_bin);
+  }
+
   public void testPackingUnpacking() throws IOException {
     int MIN = -70;
     int MAX = 70;

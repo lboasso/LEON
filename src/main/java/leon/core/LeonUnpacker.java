@@ -86,7 +86,7 @@ public final class LeonUnpacker implements Closeable {
     if(!Tags.isDouble(tag)) {
       throw new LeonException("Expecting a double in input stream", UnableToPackObj);
     }
-    long bits_low = readLE32Int();
+    long bits_low = readLE32Int() & 0x00000000FFFFFFFFL;
     long bits_high = readLE32Int();
     long bits = (bits_high << 32) | bits_low;
     return Double.longBitsToDouble(bits);
