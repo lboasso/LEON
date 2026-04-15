@@ -242,8 +242,7 @@ public class CoreTest extends TestCase {
     assertTrue(Tags.isBytes(tag));
     int bytes_size = (int) unpkr.unpackBytesSizeWithTag(tag);
     byte[] decoded_bytes = new byte[bytes_size];
-    int tot = unpkr.unpackRawBytes(decoded_bytes);
-    assertEquals(bytes_size, tot);
+    unpkr.unpackRawBytes(decoded_bytes);
     assertTrue(Arrays.equals(new byte[]{1, 2, 3}, decoded_bytes));
     tag = unpkr.nextTag();
     assertTrue(Tags.isBytes(tag));

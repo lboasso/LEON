@@ -18,7 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static leon.core.LeonException.Reason.UnableToPackObj;
 import static leon.core.LeonException.Reason.UnableToUnpackObj;
 
 
@@ -47,10 +46,38 @@ public final class LeonUnpacker implements Closeable {
     return x;
   }
 
+  private void readNumBytes(byte[] bytes, int numToRead) throws IOException {
+    int offset = 0;
+    int numRead = 0;
+    while(numRead != -1 && numToRead > 0) {
+      numRead = in.read(bytes, offset, numToRead);
+      numToRead -= numRead;
+      offset += numRead;
+    }
+
+    if(numRead == -1) {
+      throw new LeonException("Unexpected end of input reached", UnableToUnpackObj);
+    }
+  }
+
+  private void skipAllBytes(long totSize) throws IOException {
+    if(totSize <= 0) {
+      return;
+    }
+
+    final int MAX_BUFFER_SIZE = 4096;
+    int numToRead = (int) Math.min(MAX_BUFFER_SIZE, totSize);
+    byte[] skipBuf = new byte[numToRead];
+    while(totSize > 0) {
+      readNumBytes(skipBuf, numToRead);
+      totSize -= numToRead;
+      numToRead = (int) Math.min(MAX_BUFFER_SIZE, totSize);
+    }
+  }
 
   public boolean unpackBooleanWithTag(int tag) {
     if(!Tags.isBoolean(tag)) {
-      throw new LeonException("Expecting a boolean in input stream", UnableToPackObj);
+      throw new LeonException("Expecting a boolean in input stream", UnableToUnpackObj);
     }
     return tag == Tags.TRUE;
   }
@@ -61,7 +88,7 @@ public final class LeonUnpacker implements Closeable {
 
   public Object unpackNullWithTag(int tag) {
     if(!Tags.isNull(tag)) {
-      throw new LeonException("Expecting a NULL in input stream", UnableToPackObj);
+      throw new LeonException("Expecting a NULL in input stream", UnableToUnpackObj);
     }
     return null;
   }
@@ -72,7 +99,7 @@ public final class LeonUnpacker implements Closeable {
 
   public float unpackFloatWithTag(int tag) throws IOException {
     if(!Tags.isFloat(tag)) {
-      throw new LeonException("Expecting a float in input stream", UnableToPackObj);
+      throw new LeonException("Expecting a float in input stream", UnableToUnpackObj);
     }
     int bits = readLE32Int();
     return Float.intBitsToFloat(bits);
@@ -84,7 +111,7 @@ public final class LeonUnpacker implements Closeable {
 
   public double unpackDoubleWithTag(int tag) throws IOException {
     if(!Tags.isDouble(tag)) {
-      throw new LeonException("Expecting a double in input stream", UnableToPackObj);
+      throw new LeonException("Expecting a double in input stream", UnableToUnpackObj);
     }
     long bits_low = readLE32Int() & 0x00000000FFFFFFFFL;
     long bits_high = readLE32Int();
@@ -145,10 +172,7 @@ public final class LeonUnpacker implements Closeable {
       size = (int) unpackInt();
     }
     str_utf8 = new byte[size];
-    int num_read = in.read(str_utf8);
-    if(num_read != size) {
-      throw new LeonException("Unexpected end of input reached", UnableToUnpackObj);
-    }
+    readNumBytes(str_utf8, size);
     str = new String(str_utf8, StandardCharsets.UTF_8);
     return str;
   }
@@ -205,12 +229,8 @@ public final class LeonUnpacker implements Closeable {
     return size;
   }
 
-  public int unpackRawBytes(byte[] bytes) throws IOException {
-    return unpackRawBytes(bytes, 0, bytes.length);
-  }
-
-  public int unpackRawBytes(byte[] bytes, int off, int len) throws IOException {
-    return in.read(bytes, off, len);
+  public void unpackRawBytes(byte[] bytes) throws IOException {
+    readNumBytes(bytes, bytes.length);
   }
 
   public byte[] unpackBytesWithTag(int tag) throws IOException {
@@ -218,19 +238,13 @@ public final class LeonUnpacker implements Closeable {
     int size;
 
     if(Tags.isBytes(tag)) {
-      //TODO support long, array.length is a int
+      //TODO support long, array.length is an int
       size = (int) unpackInt();
     } else {
       throw new LeonException("Expecting bytes in input stream", UnableToUnpackObj);
     }
     bytes = new byte[size];
-    for(int i = 0; i < size; i++) {
-      int b = in.read();
-      if(b == -1) {
-        throw new LeonException("Unexpected end of input reached", UnableToUnpackObj);
-      }
-      bytes[i] = (byte) b;
-    }
+    readNumBytes(bytes, size);
     return bytes;
   }
 
@@ -341,10 +355,7 @@ public final class LeonUnpacker implements Closeable {
       if(size == 0) { // big string
         size = unpackInt();
       }
-      while(size > 0) {
-        in.read();
-        size--;
-      }
+      skipAllBytes(size);
     } else if(Tags.isList(tag)) {
       long length = tag & Tags.MASK_LENGTH_SMALL_LIST;
       if(length == 0) { // big list
@@ -365,11 +376,7 @@ public final class LeonUnpacker implements Closeable {
         size--;
       }
     } else if(Tags.isBytes(tag)) {
-      long size = unpackInt();
-      while(size > 0) {
-        in.read();
-        size--;
-      }
+      skipAllBytes(unpackInt());
     } else {
       throw new LeonException("Internal error valid tag not handled", LeonException.Reason.InternalError);
     }
