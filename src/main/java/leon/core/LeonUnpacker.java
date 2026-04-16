@@ -22,10 +22,25 @@ import static leon.core.LeonException.Reason.UnableToUnpackObj;
 
 
 public final class LeonUnpacker implements Closeable {
+  public int major;
+  public int minor;
+  public int patch;
+
   private final InputStream in;
 
-  public LeonUnpacker(InputStream in) {
+  public LeonUnpacker(InputStream in) throws IOException {
     this.in = in;
+    char x0, x1, x2, x3;
+    x0 = (char) in.read();
+    x1 = (char) in.read();
+    x2 = (char) in.read();
+    x3 = (char) in.read();
+    if(x0 != 'L' || x1 != 'E' || x2 != 'O' || x3 != 'N') {
+      throw new LeonException("Not a valid LEON file", UnableToUnpackObj);
+    }
+    major = in.read();
+    minor = in.read();
+    patch = in.read();
   }
 
   public LeonUnpacker(String path) throws IOException {

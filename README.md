@@ -40,7 +40,10 @@ where a `X` denotes a bit of payload. Text in quotes `"` describes the value
 it represents.
 
 ```
-leon = object {object} .
+leon = header object {object} .
+header = magic version .
+magic = "LEON" .
+version =  00000001 00000000 00000000 .
 object = integer | null | true | false  | float | double | list | string | bytes | map .
 length = integer .
 size = integer .
@@ -102,8 +105,8 @@ double = 01000100 "64 bits little endian IEEE 754 double precision floating poin
 ### List
 
 A non-empty list of maximum 15 elements can be encoded with one byte type tag
-`0101XXXX` where the least significant 4 bits store the length of the list as
-unsigned integer, followed by LEON objects as its elements.
+`0101XXXX` where the least significant 4 bits store the > 0 length of the list
+as unsigned integer, followed by LEON objects as its elements.
 A list of an arbitrary number of elements is serialized with one byte type tag
 `01010000` followed by a LEON integer representing its length and LEON objects
 as its elements.
@@ -123,7 +126,7 @@ A string is serialized as encoded [UTF-8](https://en.wikipedia.org/wiki/UTF-8)
 raw bytes.
 If the string is non-empty and its size is at most 31 bytes, it can be encoded
 with one byte type tag `011XXXXX`, where the least significant 5 bits store the
-size as unsigned integer, followed by its raw bytes.
+> 0 size as unsigned integer, followed by its raw bytes.
 A string of an arbitrary size is serialized with one byte type tag `01100000`, a
 LEON integer representing its size and followed by its raw bytes.
 
@@ -149,10 +152,10 @@ bytes = 01000101 size {XXXXXXXX} .
 
 ### Map
 
-A map is a sequence of `size` key-value pairs.
-If the the map is non-empty and its size is at most 7 paris, it can be
+A map is a sequence of `size` key-value pairs. Keys must be unique.
+If the the map is non-empty and its size is at most 7 pairs, it can be
 encoded with one byte type tag `01001XXX`, where the least significant 3 bits
-store the size as unsigned integer, followed by pairs of LEON objects.
+store the > 0 length as unsigned integer, followed by pairs of LEON objects.
 A map of an arbitrary number of pairs is encoded with one byte type tag
 `01001000`, a LEON integer representing its size and followed by pairs of
 LEON objects.

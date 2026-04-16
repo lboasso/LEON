@@ -88,8 +88,15 @@ public final class LeonPacker implements Closeable, Flushable {
     this.out = out;
   }
 
-  public LeonPacker(String path) throws FileNotFoundException {
+  public LeonPacker(String path) throws IOException {
     this.out = new BufferedOutputStream(new FileOutputStream(new File(path)));
+    out.write((int) 'L');
+    out.write((int) 'E');
+    out.write((int) 'O');
+    out.write((int) 'N');
+    out.write(1);
+    out.write(0);
+    out.write(0);
   }
 
   private void writeLE32Int(int x) throws IOException {
@@ -206,9 +213,9 @@ public final class LeonPacker implements Closeable, Flushable {
   public LeonPacker packMap(Map<Object, Object> map) throws IOException {
     int size = map.size();
     packMapTag(size);
-    for(Object key : map.keySet()) {
-      packObject(key);
-      packObject(map.get(key));
+    for(Map.Entry<Object, Object> entry : map.entrySet()) {
+      packObject(entry.getKey());
+      packObject(entry.getValue());
     }
     return this;
   }
