@@ -73,7 +73,7 @@ public class CoreTest extends TestCase {
   public void testDouble() throws IOException {
     String out_bin = "out/testDouble.leon";
     LeonPacker pkr = new LeonPacker(out_bin);
-    long hex_d = 0x145778FFFF154763L;
+    long hex_d = 0x145778FFFF154763L; // 1.1155917182881299E-210
     double d = Double.longBitsToDouble(hex_d);
     pkr.packDouble(d);
     pkr.close();
@@ -88,7 +88,7 @@ public class CoreTest extends TestCase {
   public void testFloat() throws IOException {
     String out_bin = "out/testFloat.leon";
     LeonPacker pkr = new LeonPacker(out_bin);
-    int hex_f = 0x7FC00000;
+    int hex_f = 0x1FC98741; // 8.535057E-20
     float f = Float.intBitsToFloat(hex_f);
     pkr.packFloat(f);
     pkr.close();
